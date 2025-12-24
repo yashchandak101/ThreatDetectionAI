@@ -1,12 +1,17 @@
 from pathlib import Path
 from datetime import timedelta
 import os
+
+import dj_database_url
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
-
+# --------------------------------------------------
+# BASE
+# --------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load .env locally (Render ignores it and injects env vars)
+load_dotenv(BASE_DIR / ".env")
 
 # --------------------------------------------------
 # SECURITY
@@ -32,7 +37,6 @@ INSTALLED_APPS = [
 
     # Third-party
     "rest_framework",
-    "rest_framework.authtoken",
     "django_filters",
     "drf_yasg",
 
@@ -81,17 +85,14 @@ TEMPLATES = [
 WSGI_APPLICATION = "core.wsgi.application"
 
 # --------------------------------------------------
-# DATABASE
+# DATABASE (Render-safe)
 # --------------------------------------------------
 DATABASES = {
-    "default": {
-        "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.sqlite3"),
-        "NAME": os.getenv("DB_NAME", BASE_DIR / "db.sqlite3"),
-        "USER": os.getenv("DB_USER", ""),
-        "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "HOST": os.getenv("DB_HOST", ""),
-        "PORT": os.getenv("DB_PORT", ""),
-    }
+    "default": dj_database_url.parse(
+        os.getenv("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=True,
+    )
 }
 
 # --------------------------------------------------
@@ -121,14 +122,6 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",
     ],
-    "DEFAULT_THROTTLE_CLASSES": [
-        "rest_framework.throttling.AnonRateThrottle",
-        "rest_framework.throttling.UserRateThrottle",
-    ],
-    "DEFAULT_THROTTLE_RATES": {
-        "anon": "50/min",
-        "user": "200/min",
-    },
 }
 
 SIMPLE_JWT = {
@@ -156,7 +149,7 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --------------------------------------------------
-# SECURITY HEADERS (IMPORTANT)
+# SECURITY HEADERS
 # --------------------------------------------------
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
